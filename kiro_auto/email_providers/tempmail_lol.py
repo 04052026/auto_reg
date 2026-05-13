@@ -31,9 +31,12 @@ class TempMailLolProvider(BaseEmailProvider):
 
     def create_email(self) -> EmailAccount:
         """Generate a new temporary email address."""
-        resp = self._session.post(f"{self.API_BASE}/generate", timeout=15)
-        resp.raise_for_status()
-        data = resp.json()
+        try:
+            resp = self._session.post(f"{self.API_BASE}/generate", timeout=15)
+            resp.raise_for_status()
+            data = resp.json()
+        except Exception as e:
+            raise RuntimeError(f"TempMail.lol: API error - {e}")
 
         address = data.get("address", "")
         token = data.get("token", "")

@@ -8,6 +8,7 @@ import json
 import random
 import hashlib
 import logging
+import re
 import threading
 from typing import Tuple, Optional, Callable
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
@@ -150,11 +151,39 @@ class KiroRegister:
 
             # Navigate to Kiro sign-in
             self.log(f"Navigating to {KIRO_SIGNIN_URL}")
-            page.goto(KIRO_SIGNIN_URL, wait_until="networkidle", timeout=30000)
+            page.goto(KIRO_SIGNIN_URL, wait_until="domcontentloaded", timeout=30000)
+            self._human_sleep(2, 4)
+            self._accept_cookie_banner(page)
+
+            # Click "Builder ID" or "AWS Builder ID" button to redirect to AWS SSO
+            self.log("Looking for Builder ID login button...")
+            if page.locator('button:has-text("Builder ID")').count() > 0:
+                page.click('button:has-text("Builder ID")')
+                self.log("Clicked 'Builder ID' button")
+            elif page.locator('text="AWS Builder ID"').count() > 0:
+                page.locator('text="AWS Builder ID"').first.click()
+                self.log("Clicked 'AWS Builder ID' link")
+            elif page.locator('a:has-text("Builder ID")').count() > 0:
+                page.locator('a:has-text("Builder ID")').first.click()
+                self.log("Clicked Builder ID link")
+            else:
+                # Maybe page auto-redirects or has different layout
+                self.log("No Builder ID button found, checking if already on AWS SSO...")
+
+            # Wait for redirect to AWS sign-in page
+            self.log("Waiting for AWS SSO page...")
+            try:
+                page.wait_for_url(re.compile(r"signin\.aws|authorize\.id\.aws|id\.awsapps"), timeout=30000)
+            except Exception:
+                # Maybe already on the right page
+                self.log(f"Current URL: {page.url}")
+                if "signin.aws" not in page.url and "authorize" not in page.url:
+                    return False, {"error": f"Failed to redirect to AWS SSO. Current URL: {page.url}"}
+
             self._human_sleep(1, 2)
             self._accept_cookie_banner(page)
 
-            # Enter email
+            # Enter email on AWS SSO page
             self.log(f"Entering email: {email}")
             self._enter_email(page, email)
             self._human_sleep(1, 2)
@@ -300,21 +329,46 @@ class KiroRegister:
             pass
 
     def _enter_email(self, page: Page, email: str):
+        # AWS SSO uses dynamic IDs but consistent placeholder
         selectors = [
             'input[placeholder="username@example.com"]',
             'input[type="email"]',
             'input[name="email"]',
+            'input[autocomplete="username"]',
         ]
+        # Wait for any email input to appear (AWS SSO can be slow)
         for sel in selectors:
             try:
                 el = page.locator(sel).first
-                if el.count() > 0 and el.is_visible():
-                    self._type_human(page, el, email)
-                    self._click_primary(page)
-                    return
+                el.wait_for(state="visible", timeout=15000)
+                self._type_human(page, el, email)
+                self._click_primary(page)
+                return
             except Exception:
                 continue
-        raise RuntimeError("Email input not found")
+
+        # Fallback: find any visible text input
+        try:
+            all_inputs = page.locator('input[type="text"], input:not([type])').all()
+            for inp in all_inputs:
+                if inp.is_visible():
+                    self.log("Using fallback: first visible text input")
+                    self._type_human(page, inp, email)
+                    self._click_primary(page)
+                    return
+        except Exception:
+            pass
+
+        # Debug: log what's on the page
+        try:
+            self.log(f"Current URL: {page.url}")
+            inputs = page.locator("input").all()
+            for i, inp in enumerate(inputs):
+                self.log(f"  input[{i}]: type={inp.get_attribute('type')} placeholder={inp.get_attribute('placeholder')} id={inp.get_attribute('id')}")
+        except Exception:
+            pass
+
+        raise RuntimeError("Email input not found on AWS SSO page")
 
     def _type_human(self, page: Page, locator, text: str):
         el = locator.first if hasattr(locator, 'first') else locator
