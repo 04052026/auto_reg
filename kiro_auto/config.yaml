@@ -1,0 +1,37 @@
+# Kiro Auto-Registration Configuration
+# All services used are 100% FREE - No paid APIs required
+
+kiro:
+  headless: true              # true = headless browser (no window)
+  max_concurrent: 2           # Max concurrent registrations
+  retry_times: 3              # Retry count per registration attempt
+  otp_timeout: 120            # Seconds to wait for verification code
+  register_delay: 30          # Seconds between registrations
+
+email:
+  providers:                  # Priority order (all FREE)
+    - tempmail_lol            # TempMail.lol - free, no config needed
+    - mail_tm                 # Mail.tm - free, no config needed
+    - guerrilla               # Guerrilla Mail - free backup
+    - cfworker                # Cloudflare Worker - self-hosted free
+  cfworker:                   # Only needed if using Cloudflare Worker
+    api_url: ""
+    domain: ""
+
+proxy:
+  enabled: false
+  urls: []                    # List of proxy URLs (optional)
+  file: ""                    # Or a file with proxies (one per line)
+
+schedule:
+  enabled: true
+  interval_minutes: 60        # Run every 60 minutes
+  max_accounts_per_run: 1     # Accounts to create per scheduled run
+
+auto_switch:
+  enabled: true               # Auto-switch Kiro IDE after registration
+  restart_ide: false          # Auto-restart Kiro IDE after switch
+
+logging:
+  level: INFO
+  file: logs/kiro-auto.log
