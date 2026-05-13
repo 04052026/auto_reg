@@ -3,19 +3,15 @@ Kiro / AWS Builder ID Registration - Playwright-based.
 Adapted from platforms/kiro/core.py for standalone use.
 """
 
-import uuid
 import time
 import json
 import random
 import hashlib
-import base64
-import re
-import os
-import threading
 import logging
+import threading
 from typing import Tuple, Optional, Callable
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
-from urllib.parse import urlencode, urlparse, parse_qs
+from urllib.parse import urlparse, parse_qs
 
 import requests
 from playwright.sync_api import sync_playwright, Page, Locator
@@ -414,7 +410,7 @@ class KiroRegister:
         ]
         for loc in candidates:
             try:
-                if loc.first.count() > 0 and loc.first.is_visible():
+                if loc.count() > 0 and loc.first.is_visible():
                     return loc.first
             except Exception:
                 continue
@@ -429,7 +425,7 @@ class KiroRegister:
         ]
         for loc in candidates:
             try:
-                if loc.first.count() > 0 and loc.first.is_visible():
+                if loc.count() > 0 and loc.first.is_visible():
                     return loc.first
             except Exception:
                 continue

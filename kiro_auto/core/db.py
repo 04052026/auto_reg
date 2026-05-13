@@ -15,7 +15,7 @@ _db_path: str = str(DEFAULT_DB_PATH)
 
 
 def _get_connection() -> sqlite3.Connection:
-    """Get thread-local SQLite connection."""
+    """Get a new SQLite connection. Caller must close it."""
     conn = sqlite3.connect(_db_path, timeout=10)
     conn.row_factory = sqlite3.Row
     conn.execute("PRAGMA journal_mode=WAL")
@@ -106,27 +106,34 @@ def save_account(
 
 def get_account(account_id: int) -> Optional[dict]:
     """Get account by ID."""
-    with _get_connection() as conn:
+    conn = _get_connection()
+    try:
         row = conn.execute("SELECT * FROM accounts WHERE id = ?", (account_id,)).fetchone()
         if row:
             return dict(row)
+    finally:
+        conn.close()
     return None
 
 
 def get_latest_account() -> Optional[dict]:
     """Get the most recently created account."""
-    with _get_connection() as conn:
+    conn = _get_connection()
+    try:
         row = conn.execute(
             "SELECT * FROM accounts ORDER BY id DESC LIMIT 1"
         ).fetchone()
         if row:
             return dict(row)
+    finally:
+        conn.close()
     return None
 
 
 def list_accounts(status: Optional[str] = None, limit: int = 100) -> List[dict]:
     """List all accounts, optionally filtered by status."""
-    with _get_connection() as conn:
+    conn = _get_connection()
+    try:
         if status:
             rows = conn.execute(
                 "SELECT * FROM accounts WHERE status = ? ORDER BY id DESC LIMIT ?",
@@ -137,6 +144,8 @@ def list_accounts(status: Optional[str] = None, limit: int = 100) -> List[dict]:
                 "SELECT * FROM accounts ORDER BY id DESC LIMIT ?", (limit,)
             ).fetchall()
         return [dict(r) for r in rows]
+    finally:
+        conn.close()
 
 
 def update_account_tokens(account_id: int, tokens: dict):
@@ -189,7 +198,8 @@ def save_task_log(
 
 def get_stats() -> dict:
     """Get summary statistics."""
-    with _get_connection() as conn:
+    conn = _get_connection()
+    try:
         total = conn.execute("SELECT COUNT(*) FROM accounts").fetchone()[0]
         active = conn.execute(
             "SELECT COUNT(*) FROM accounts WHERE status = 'registered'"
@@ -201,6 +211,8 @@ def get_stats() -> dict:
             "SELECT created_at FROM accounts ORDER BY id DESC LIMIT 1"
         ).fetchone()
         last_created = last_row[0] if last_row else "Never"
+    finally:
+        conn.close()
 
     return {
         "total": total,

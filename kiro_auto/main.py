@@ -8,7 +8,13 @@ Standalone CLI tool for automated Kiro (AWS Builder ID) account registration.
 import argparse
 import sys
 import signal
+import os
 from pathlib import Path
+
+# Ensure package-level imports resolve correctly when running as script
+_THIS_DIR = Path(__file__).resolve().parent
+if str(_THIS_DIR) not in sys.path:
+    sys.path.insert(0, str(_THIS_DIR))
 
 from core.config import load_config
 from core.db import init_db
@@ -81,13 +87,22 @@ def main():
 
     elif args.command == "schedule":
         scheduler = Scheduler(config, logger)
-        # Graceful shutdown
-        signal.signal(signal.SIGINT, lambda *_: scheduler.stop())
-        signal.signal(signal.SIGTERM, lambda *_: scheduler.stop())
-        scheduler.start(
-            interval_minutes=args.interval,
-            max_per_run=args.max_per_run,
-        )
+
+        # Graceful shutdown via flag (signal handlers just set flag)
+        def _signal_handler(*_):
+            scheduler.stop()
+
+        signal.signal(signal.SIGINT, _signal_handler)
+        signal.signal(signal.SIGTERM, _signal_handler)
+
+        try:
+            scheduler.start(
+                interval_minutes=args.interval,
+                max_per_run=args.max_per_run,
+            )
+        except KeyboardInterrupt:
+            scheduler.stop()
+            logger.info("Scheduler interrupted by user")
 
     elif args.command == "list":
         from core.db import list_accounts

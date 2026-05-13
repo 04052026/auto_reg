@@ -199,11 +199,14 @@ class TaskRunner:
         reg = KiroRegister(proxy=proxy, headless=headless)
         reg.log_fn = lambda msg: self.logger.info(msg)
 
+        # Keep reference to same provider instance for OTP polling
+        # (avoids losing auth token when re-creating provider)
+        _otp_provider = provider
+
         def otp_callback():
             """Poll for OTP from email provider."""
             self.logger.info("Waiting for verification code...")
-            provider = get_email_provider(used_provider, self.config)
-            code = provider.wait_for_code(
+            code = _otp_provider.wait_for_code(
                 mail_account,
                 timeout=self.config.otp_timeout,
             )

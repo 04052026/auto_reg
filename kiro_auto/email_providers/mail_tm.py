@@ -94,7 +94,12 @@ class MailTmProvider(BaseEmailProvider):
 
                     # Get full message
                     full_msg = self._get_message(msg_id)
-                    text = full_msg.get("text", "") or full_msg.get("html", [None])[0] or ""
+                    text = full_msg.get("text", "")
+                    html_field = full_msg.get("html", "")
+                    # html can be a string or list depending on API version
+                    if isinstance(html_field, list):
+                        html_field = html_field[0] if html_field else ""
+                    text = text or html_field or ""
                     subject = full_msg.get("subject", "")
                     full_text = f"{subject} {text}"
 
