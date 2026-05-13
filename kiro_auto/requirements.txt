@@ -1,0 +1,14 @@
+# Kiro Auto-Registration - Dependencies
+# All free, no paid service SDKs
+
+# Browser automation
+playwright>=1.40.0
+
+# HTTP requests
+requests>=2.28.0
+
+# Configuration
+pyyaml>=6.0
+
+# Anti-detection (optional but recommended)
+# playwright-stealth>=1.0.6
