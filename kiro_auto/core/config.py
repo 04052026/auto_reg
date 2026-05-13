@@ -25,14 +25,15 @@ class Config:
     headless: bool = True
     max_concurrent: int = 2
     retry_times: int = 3
-    otp_timeout: int = 120
+    otp_timeout: int = 180
     register_delay: int = 30
 
     # Email providers (priority order) - ALL FREE
     email_providers: List[str] = field(default_factory=lambda: [
-        "tempmail_lol",
+        "onesecmail",
         "mail_tm",
         "guerrilla",
+        "tempmail_lol",
         "cfworker",
     ])
 

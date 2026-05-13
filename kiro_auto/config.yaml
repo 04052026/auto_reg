@@ -10,9 +10,10 @@ kiro:
 
 email:
   providers:                  # Priority order (all FREE)
-    - tempmail_lol            # TempMail.lol - free, no config needed
-    - mail_tm                 # Mail.tm - free, no config needed
-    - guerrilla               # Guerrilla Mail - free backup
+    - onesecmail              # 1secMail - fast, multiple domains, widely accepted
+    - mail_tm                 # Mail.tm - free, REST API
+    - guerrilla               # Guerrilla Mail - reliable backup
+    - tempmail_lol            # TempMail.lol - may be unstable
     - cfworker                # Cloudflare Worker - self-hosted free
   cfworker:                   # Only needed if using Cloudflare Worker
     api_url: ""

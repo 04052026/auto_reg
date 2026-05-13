@@ -422,7 +422,7 @@ class KiroRegister:
             self._human_sleep(0.3, 0.6)
         return "timeout", None, "Timeout"
 
-    def _wait_for_otp_step(self, page: Page, timeout_ms: int = 18000):
+    def _wait_for_otp_step(self, page: Page, timeout_ms: int = 30000):
         deadline = time.time() + (timeout_ms / 1000)
         while time.time() < deadline:
             field = self._find_otp_input(page)
