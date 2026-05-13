@@ -1,179 +1,226 @@
 @echo off
-chcp 65001 >nul 2>&1
-title Kiro Auto-Reg - Cài đặt nhanh
+setlocal enabledelayedexpansion
+title Kiro Auto-Reg - Quick Install
 color 0A
 
 echo ============================================================
-echo    KIRO AUTO-REGISTRATION TOOL - CÀI ĐẶT NHANH
-echo    Tự động cài đặt mọi thứ cần thiết và khởi động tool
+echo    KIRO AUTO-REGISTRATION TOOL - CAI DAT NHANH
+echo    Tu dong cai dat moi thu can thiet va khoi dong tool
 echo ============================================================
 echo.
 
-:: === BƯỚC 1: Tìm Python phù hợp ===
-echo [1/5] Đang tìm Python trên máy...
+:: === BUOC 1: Tim Python phu hop ===
+echo [1/5] Dang tim Python tren may...
+echo.
 
 set PYTHON_CMD=
-set PYTHON_VER=
+set PYTHON_FOUND=0
 
-:: Thử python3 trước (ưu tiên)
-where python3 >nul 2>&1
-if %ERRORLEVEL% EQU 0 (
-    for /f "tokens=2 delims= " %%v in ('python3 --version 2^>^&1') do set PYTHON_VER=%%v
-    set PYTHON_CMD=python3
-    goto :found_python
-)
-
-:: Thử python
-where python >nul 2>&1
-if %ERRORLEVEL% EQU 0 (
-    for /f "tokens=2 delims= " %%v in ('python --version 2^>^&1') do set PYTHON_VER=%%v
-    set PYTHON_CMD=python
-    goto :found_python
-)
-
-:: Thử py launcher (Windows Python Launcher - hỗ trợ nhiều version)
+:: Thu py launcher truoc (ho tro nhieu version Python tren Windows)
 where py >nul 2>&1
 if %ERRORLEVEL% EQU 0 (
-    :: Thử py -3.12 trước
+    echo    Tim thay Python Launcher (py)...
+    
     py -3.12 --version >nul 2>&1
-    if %ERRORLEVEL% EQU 0 (
-        for /f "tokens=2 delims= " %%v in ('py -3.12 --version 2^>^&1') do set PYTHON_VER=%%v
+    if !ERRORLEVEL! EQU 0 (
         set PYTHON_CMD=py -3.12
-        goto :found_python
+        set PYTHON_FOUND=1
+        echo    Su dung: py -3.12
+        goto :python_ok
     )
-    :: Thử py -3.11
     py -3.11 --version >nul 2>&1
-    if %ERRORLEVEL% EQU 0 (
-        for /f "tokens=2 delims= " %%v in ('py -3.11 --version 2^>^&1') do set PYTHON_VER=%%v
+    if !ERRORLEVEL! EQU 0 (
         set PYTHON_CMD=py -3.11
-        goto :found_python
+        set PYTHON_FOUND=1
+        echo    Su dung: py -3.11
+        goto :python_ok
     )
-    :: Thử py -3.10
     py -3.10 --version >nul 2>&1
-    if %ERRORLEVEL% EQU 0 (
-        for /f "tokens=2 delims= " %%v in ('py -3.10 --version 2^>^&1') do set PYTHON_VER=%%v
+    if !ERRORLEVEL! EQU 0 (
         set PYTHON_CMD=py -3.10
-        goto :found_python
+        set PYTHON_FOUND=1
+        echo    Su dung: py -3.10
+        goto :python_ok
     )
-    :: Thử py -3 (bất kỳ Python 3 nào)
     py -3 --version >nul 2>&1
-    if %ERRORLEVEL% EQU 0 (
-        for /f "tokens=2 delims= " %%v in ('py -3 --version 2^>^&1') do set PYTHON_VER=%%v
+    if !ERRORLEVEL! EQU 0 (
         set PYTHON_CMD=py -3
-        goto :found_python
+        set PYTHON_FOUND=1
+        echo    Su dung: py -3
+        goto :python_ok
     )
 )
 
-:: Thử các đường dẫn phổ biến
+:: Thu python
+where python >nul 2>&1
+if %ERRORLEVEL% EQU 0 (
+    python --version >nul 2>&1
+    if !ERRORLEVEL! EQU 0 (
+        set PYTHON_CMD=python
+        set PYTHON_FOUND=1
+        echo    Su dung: python
+        goto :python_ok
+    )
+)
+
+:: Thu python3
+where python3 >nul 2>&1
+if %ERRORLEVEL% EQU 0 (
+    python3 --version >nul 2>&1
+    if !ERRORLEVEL! EQU 0 (
+        set PYTHON_CMD=python3
+        set PYTHON_FOUND=1
+        echo    Su dung: python3
+        goto :python_ok
+    )
+)
+
+:: Tim trong cac thu muc pho bien
 if exist "C:\Python312\python.exe" (
-    set PYTHON_CMD=C:\Python312\python.exe
-    for /f "tokens=2 delims= " %%v in ('"C:\Python312\python.exe" --version 2^>^&1') do set PYTHON_VER=%%v
-    goto :found_python
+    set "PYTHON_CMD=C:\Python312\python.exe"
+    set PYTHON_FOUND=1
+    echo    Su dung: C:\Python312\python.exe
+    goto :python_ok
 )
 if exist "C:\Python311\python.exe" (
-    set PYTHON_CMD=C:\Python311\python.exe
-    for /f "tokens=2 delims= " %%v in ('"C:\Python311\python.exe" --version 2^>^&1') do set PYTHON_VER=%%v
-    goto :found_python
+    set "PYTHON_CMD=C:\Python311\python.exe"
+    set PYTHON_FOUND=1
+    echo    Su dung: C:\Python311\python.exe
+    goto :python_ok
 )
 if exist "%LOCALAPPDATA%\Programs\Python\Python312\python.exe" (
     set "PYTHON_CMD=%LOCALAPPDATA%\Programs\Python\Python312\python.exe"
-    for /f "tokens=2 delims= " %%v in ('"%LOCALAPPDATA%\Programs\Python\Python312\python.exe" --version 2^>^&1') do set PYTHON_VER=%%v
-    goto :found_python
+    set PYTHON_FOUND=1
+    echo    Su dung: %LOCALAPPDATA%\Programs\Python\Python312\python.exe
+    goto :python_ok
 )
 if exist "%LOCALAPPDATA%\Programs\Python\Python311\python.exe" (
     set "PYTHON_CMD=%LOCALAPPDATA%\Programs\Python\Python311\python.exe"
-    for /f "tokens=2 delims= " %%v in ('"%LOCALAPPDATA%\Programs\Python\Python311\python.exe" --version 2^>^&1') do set PYTHON_VER=%%v
-    goto :found_python
+    set PYTHON_FOUND=1
+    echo    Su dung: %LOCALAPPDATA%\Programs\Python\Python311\python.exe
+    goto :python_ok
+)
+if exist "%LOCALAPPDATA%\Programs\Python\Python310\python.exe" (
+    set "PYTHON_CMD=%LOCALAPPDATA%\Programs\Python\Python310\python.exe"
+    set PYTHON_FOUND=1
+    echo    Su dung: %LOCALAPPDATA%\Programs\Python\Python310\python.exe
+    goto :python_ok
 )
 
-:: Không tìm thấy Python
+:: Khong tim thay
 echo.
-echo [LỖI] Không tìm thấy Python 3.10+ trên máy!
+echo [LOI] Khong tim thay Python 3.10+ tren may!
 echo.
-echo Vui lòng cài Python từ: https://www.python.org/downloads/
-echo (Chọn phiên bản 3.11 hoặc 3.12, tick "Add to PATH" khi cài)
+echo Vui long cai Python tu: https://www.python.org/downloads/
+echo (Chon phien ban 3.11 hoac 3.12)
+echo.
+echo QUAN TRONG: Tick "Add Python to PATH" khi cai dat!
 echo.
 pause
 exit /b 1
 
-:found_python
-echo    Đã tìm thấy: Python %PYTHON_VER%
-echo    Lệnh sử dụng: %PYTHON_CMD%
+:python_ok
+echo.
+%PYTHON_CMD% --version
 echo.
 
-:: === BƯỚC 2: Tạo Virtual Environment ===
-echo [2/5] Tạo môi trường ảo (venv)...
+:: === BUOC 2: Tao Virtual Environment ===
+echo [2/5] Tao moi truong ao (venv)...
 
-if exist "venv" (
-    echo    Đã có venv, bỏ qua...
+if exist "venv\Scripts\activate.bat" (
+    echo    Da co venv, bo qua...
 ) else (
     %PYTHON_CMD% -m venv venv
     if %ERRORLEVEL% NEQ 0 (
-        echo [LỖI] Không thể tạo venv. Thử cài: %PYTHON_CMD% -m pip install virtualenv
+        echo [LOI] Khong the tao venv!
+        echo    Thu chay: %PYTHON_CMD% -m pip install virtualenv
         pause
         exit /b 1
     )
-    echo    Đã tạo venv thành công!
+    echo    Da tao venv thanh cong!
 )
 echo.
 
-:: Kích hoạt venv
+:: Kich hoat venv
 call venv\Scripts\activate.bat
 
-:: === BƯỚC 3: Cài đặt dependencies ===
-echo [3/5] Cài đặt thư viện cần thiết...
-pip install --upgrade pip >nul 2>&1
+:: === BUOC 3: Cai dat dependencies ===
+echo [3/5] Cai dat thu vien Python...
+echo.
+
+pip install --upgrade pip --quiet 2>nul
 pip install -r requirements.txt
 if %ERRORLEVEL% NEQ 0 (
-    echo [LỖI] Cài dependencies thất bại!
+    echo.
+    echo [LOI] Cai dependencies that bai!
+    echo    Kiem tra ket noi mang va thu lai.
     pause
     exit /b 1
 )
-echo    Đã cài xong dependencies!
+echo.
+echo    Da cai xong dependencies!
 echo.
 
-:: === BƯỚC 4: Cài Playwright Chromium ===
-echo [4/5] Cài đặt trình duyệt Chromium (Playwright)...
+:: === BUOC 4: Cai Playwright Chromium ===
+echo [4/5] Cai dat trinh duyet Chromium (Playwright)...
+echo    (Lan dau mat vai phut de download ~150MB)
+echo.
+
 playwright install chromium
 if %ERRORLEVEL% NEQ 0 (
-    echo [CẢNH BÁO] Cài Playwright browser có thể thất bại.
-    echo    Thử chạy thủ công: playwright install chromium
+    echo.
+    echo [CANH BAO] Cai Playwright co the that bai.
+    echo    Thu chay thu cong: playwright install chromium
+    echo.
 )
-echo    Đã cài xong Chromium!
+echo.
+echo    Da cai xong Chromium!
 echo.
 
-:: === BƯỚC 5: Tạo thư mục dữ liệu ===
-echo [5/5] Tạo thư mục dữ liệu...
+:: === BUOC 5: Tao thu muc ===
+echo [5/5] Tao thu muc du lieu...
 if not exist "data" mkdir data
 if not exist "logs" mkdir logs
-echo    Đã tạo thư mục data/ và logs/
+echo    Da tao thu muc data\ va logs\
 echo.
 
-:: === HOÀN TẤT ===
+:: === Tao file start.bat tien ich ===
+(
+echo @echo off
+echo call "%%~dp0venv\Scripts\activate.bat"
+echo python "%%~dp0main.py" %%*
+) > start.bat
+
+:: === HOAN TAT ===
 echo ============================================================
-echo    CÀI ĐẶT HOÀN TẤT! 
+echo    CAI DAT HOAN TAT!
 echo ============================================================
 echo.
-echo    Các lệnh sử dụng:
+echo    Cac lenh su dung:
 echo    ----------------------------------------------------------
-echo    Đăng ký 1 account:    python main.py register
-echo    Đăng ký 5 account:    python main.py register -n 5
-echo    Chạy tự động:         python main.py schedule
-echo    Xem danh sách:        python main.py list
-echo    Chuyển account:       python main.py switch [ID]
+echo    Dang ky 1 account:    start.bat register
+echo    Dang ky 5 account:    start.bat register -n 5
+echo    Chay tu dong:         start.bat schedule
+echo    Xem danh sach:        start.bat list
+echo    Chuyen account:       start.bat switch [ID]
+echo    Xem trang thai:       start.bat status
 echo    ----------------------------------------------------------
 echo.
-echo    Đang khởi động tool...
+echo    Hoac dung truc tiep (khi venv da active):
+echo    python main.py register
 echo.
 
-:: Chạy tool
-python main.py status
+:: Kiem tra he thong
+echo Dang kiem tra he thong...
+echo.
+python main.py status 2>nul
 echo.
 echo ============================================================
-echo    Nhấn phím bất kỳ để bắt đầu đăng ký tài khoản...
+echo    Nhan phim bat ky de bat dau dang ky tai khoan...
 echo ============================================================
 pause >nul
 
 python main.py register
 echo.
-pause
+echo Hoan tat! Nhan phim bat ky de dong.
+pause >nul
